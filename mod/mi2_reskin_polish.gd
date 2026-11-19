@@ -528,14 +528,14 @@ func _style(name: String) -> StyleBox:
 			f.bg_color = Color("#0d0c0b")
 			f.border_color = trim.darkened(0.35)
 			f.set_border_width_all(1)
-			f.set_corner_radius_all(2)
+			f.anti_aliasing = false
 			sb = f
 		"range_gold":
 			var f := StyleBoxFlat.new()
 			f.bg_color = gold.darkened(0.08)
 			f.border_color = gold.lightened(0.35)
 			f.border_width_top = 1
-			f.set_corner_radius_all(2)
+			f.anti_aliasing = false
 			sb = f
 		"tip_line":
 			var l := StyleBoxLine.new()
@@ -655,15 +655,24 @@ func _draw_divider(d: Control, lb: Label) -> void:
 			font = lb.label_settings.font
 		fs = lb.label_settings.font_size
 	var text_w := font.get_string_size(lb.text, HORIZONTAL_ALIGNMENT_LEFT, -1, fs).x if font != null else 60.0
-	var y := roundf(d.size.y * 0.55) + 0.5
+	var mid := d.size.y * 0.55
+	if font != null:
+		var asc := font.get_ascent(fs)
+		var baseline := (d.size.y - font.get_height(fs)) / 2.0 + asc
+		mid = baseline - asc * 0.36
 	var x0 := text_w + 8.0
 	var x1 := d.size.x - 10.0
 	if x1 - x0 < 12.0:
 		return
-	var col: Color = core.TRIM
-	d.draw_line(Vector2(x0, y), Vector2(x1 - 4.0, y), Color(col, 0.8), 1.0)
+	var xf := d.get_viewport().get_final_transform() * d.get_global_transform_with_canvas()
+	var s := maxf(xf.get_scale().y, 0.01)
+	var top := (roundf(xf.origin.y + mid * s - 0.5) - xf.origin.y) / s
+	var px := 1.0 / s
+	d.draw_rect(Rect2(x0, top, x1 - 4.0 - x0, px), Color(core.TRIM.lerp(core.GOLD, 0.35), 0.9))
 	var dia := _diamond(core.GOLD.darkened(0.15))
-	d.draw_texture(dia, Vector2(x1 - dia.get_width() / 2.0, y - dia.get_height() / 2.0))
+	var dx := (roundf(xf.origin.x + (x1 - dia.get_width() / 2.0) * s) - xf.origin.x) / s
+	var dy := (roundf(xf.origin.y + (top + px / 2.0) * s - dia.get_height() / 2.0) - xf.origin.y) / s
+	d.draw_texture_rect(dia, Rect2(dx, dy, dia.get_width() * px, dia.get_height() * px), false)
 
 
 func _diamond(col: Color) -> ImageTexture:

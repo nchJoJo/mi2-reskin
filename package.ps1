@@ -1,4 +1,9 @@
-param([string]$Version = (Get-Date -Format 'yyyy-MM-dd'))
+param([string]$Version = '')
+if (-not $Version) {
+    $m = Select-String -Path (Join-Path $PSScriptRoot 'mod\mi2_reskin_core.gd') -Pattern '^const VERSION := "(.+)"' | Select-Object -First 1
+    if (-not $m) { throw 'No VERSION in mod\mi2_reskin_core.gd' }
+    $Version = $m.Matches[0].Groups[1].Value
+}
 $ErrorActionPreference = 'Stop'
 $root = $PSScriptRoot
 $name = "MI2-Reskin-$Version"

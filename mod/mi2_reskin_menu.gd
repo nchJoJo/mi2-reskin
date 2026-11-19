@@ -15,9 +15,15 @@ const ITEMS := [
 	["toggle", "reskin", "enabled", "Reskin", "Switch the whole reskin on or off. F7 does the same while you play."],
 	["choice", "reskin", "look", "Panel style", "Crafted: trims, bevels and one look per kind of part. Flat: plain panels with a thin rim.",
 		[["crafted", "Crafted"], ["flat", "Flat"]]],
-	["choice", "reskin", "preset", "Finish", "How much bronze and gold the crafted look uses. Soft is calmer and lower in contrast, for long sessions.",
+	["choice", "reskin", "preset", "Finish", "Soft: flat, rounded panels in muted colours, like Melvor Idle 1. Crafted: bronze trims, bevels and gold underlines. Gilded: extra gold.",
 		[["crafted", "Crafted"], ["soft", "Soft"], ["gilded", "Gilded"]]],
+	["choice", "reskin", "palette", "Colours", "MI2: Melvor Idle 2's warm browns. MI1 Slate: Melvor Idle 1's slate blues. Graphite: neutral dark greys. Midnight: deep blue-black.",
+		[["mi2", "MI2"], ["slate", "MI1 Slate"], ["graphite", "Graphite"], ["midnight", "Midnight"]]],
+	["choice", "reskin", "accent", "Accent", "The colour of bars, dividers, scrollbar grips and selected outlines. Finish's: the finish's own colour.",
+		[["finish", "Finish's"], ["sand", "Sand"], ["gold", "Gold"], ["silver", "Silver"]]],
 	["toggle", "reskin", "title_font", "Title fonts", "Header and page titles in Alegreya SC, small captions in Alegreya Sans SC."],
+	["choice", "reskin", "body_font", "Body font", "Rubik is softly rounded and easy to read at small sizes, or keep the game's own font.",
+		[["Rubik", "Rubik"], ["game", "Game's"]]],
 	["heading", "", "", "Frame & Pages"],
 	["toggle", "frame", "tidy", "Tidy the frame", "Hides the \"coming soon\" teaser, labels the footer, gold sidebar headings, and a slot in the top bar for other mods."],
 	["toggle", "pages", "tidy", "Tidy the pages", "Lists show only the next locked entry, the Creating column only while crafting, Bank shortcuts behind a \"?\", grey locked text."],
@@ -36,19 +42,18 @@ const ITEMS := [
 		[["sword", "Sword"], ["off", "Normal"]]],
 	["heading", "", "", "Melvor Idle 1"],
 	["toggle", "mi1", "icons", "Melvor Idle 1 icons", "Skill and item icons from your own Melvor Idle 1 install, where one exists. Nothing is copied."],
-	["toggle", "mi1", "theme", "Melvor Idle 1 colours", "Melvor Idle 1's slate greys instead of Melvor Idle 2's panel colours."],
 	["reset"],
 ]
 
 const VARS := {
 	"reskin/enabled": ["core", "enabled"], "reskin/look": ["core", "look"], "reskin/preset": ["core", "preset"],
-	"reskin/title_font": ["core", "title_font"], "frame/tidy": ["core", "tidy_frame"], "pages/tidy": ["core", "tidy_pages"],
+	"reskin/title_font": ["core", "title_font"], "reskin/body_font": ["core", "body_font"], "frame/tidy": ["core", "tidy_frame"], "pages/tidy": ["core", "tidy_pages"],
 	"pages/remember_category": ["core", "remember_category"], "pages/picture_shadows": ["core", "picture_shadows"],
 	"pages/detail_frame": ["core", "detail_frame"], "polish/bars": ["polish", "bars"],
 	"polish/scrollbars": ["polish", "scrollbars"], "polish/sidebar": ["polish", "sidebar"],
 	"polish/motion": ["polish", "motion"], "polish/tooltips": ["polish", "tooltips"],
 	"polish/even_digits": ["polish", "even_digits"], "polish/cursor": ["polish", "cursor"],
-	"mi1/icons": ["core", "mi1_icons"], "mi1/theme": ["core", "mi1_theme"],
+	"mi1/icons": ["core", "mi1_icons"], "reskin/palette": ["core", "colours"], "reskin/accent": ["core", "accent"],
 }
 
 
@@ -162,7 +167,7 @@ func _build(settings: Node) -> void:
 				b.custom_minimum_size = Vector2(200, 36)
 				b.pressed.connect(_reset)
 				var note := Label.new()
-				note.text = "Your choices are kept in your own game folder (mi2_reskin_settings.cfg). F7 switches the reskin off and on while you play."
+				note.text = "Your choices are kept in your own game folder (mi2_reskin_settings.cfg). F7 switches the reskin off and on while you play.\nMI2 Reskin version %s" %(str(core.get("VERSION")) if core != null else "?")
 				note.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
 				note.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 				var grey = row_tpl.find_child("Description", true, false)

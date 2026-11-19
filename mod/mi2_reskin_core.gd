@@ -1,5 +1,6 @@
 extends Node
 
+const VERSION := "2026-11-19.2"
 const CFG_PATH := "res://mod/mi2_reskin.cfg"
 const LOCAL_CFG_PATH := "res://mod/mi2_reskin_local.cfg"
 const ICON_MAP_PATH := "res://mod/mi1_icons.cfg"
@@ -40,6 +41,7 @@ var title_font := true
 var title_font_file := "AlegreyaSC-Bold.ttf"
 var caption_font_file := "AlegreyaSansSC-Bold.ttf"
 var caption_spacing := 1
+var body_font := "Rubik"
 var _caption_font: Font = null
 var tidy_pages := true
 var tidy_frame := true
@@ -52,6 +54,8 @@ var look := "crafted"
 var toggle_key: Key = KEY_F7
 var mi1_icons := false
 var mi1_theme := false
+var colours := "mi2"
+var accent := "finish"
 var keep_teal_headers := false
 var mi1_plain_background := false
 var mi1_path := ""
@@ -165,7 +169,7 @@ func _ready() -> void:
 	if enabled:
 		_apply_globals(true)
 	_write_style_file()
-	_log("core started: enabled=%s flatten_textures=%s panel_radius=%d mi1_icons=%s (%d mapped) mi1_theme=%s" % [
+	_log("core started: version=" + VERSION + " enabled=%s flatten_textures=%s panel_radius=%d mi1_icons=%s (%d mapped) mi1_theme=%s" % [
 		enabled, flatten_textures, panel_radius, mi1_icons, _icon_map.size(), mi1_theme])
 
 
@@ -279,6 +283,7 @@ func apply_settings() -> void:
 	_caption_font = null
 	_title_settings.clear()
 	_label_kind.clear()
+	_plaque_memo.clear()
 	if mi1_icons and _icon_map.is_empty():
 		_load_icon_map()
 	if _polish != null:
@@ -313,6 +318,7 @@ func _load_config() -> void:
 	title_font = bool(cfg.get_value("reskin", "title_font", title_font))
 	title_font_file = str(cfg.get_value("reskin", "title_font_file", title_font_file))
 	caption_font_file = str(cfg.get_value("reskin", "caption_font_file", caption_font_file))
+	body_font = str(cfg.get_value("reskin", "body_font", body_font))
 	caption_spacing = int(cfg.get_value("reskin", "caption_spacing", caption_spacing))
 	tidy_frame = bool(cfg.get_value("frame", "tidy", tidy_frame))
 	other_mods = PackedStringArray()
@@ -327,18 +333,27 @@ func _load_config() -> void:
 	TRIM = Color("#7a5f38")
 	GOLD = Color("#c9a45c")
 	if preset == "soft":
-		TRIM = Color("#6a5a44")
-		GOLD = Color("#b39a6b")
+		TRIM = Color("#5d5850")
+		GOLD = Color("#c9b48c")
 	elif preset == "gilded":
 		TRIM = Color("#a07c3c")
 		GOLD = Color("#e0b85a")
+	accent = str(cfg.get_value("reskin", "accent", accent))
+	if ACCENTS.has(accent):
+		TRIM = Color(ACCENTS[accent][0])
+		GOLD = Color(ACCENTS[accent][1])
 	_cfg = cfg
 	panel_opacity = clampf(float(cfg.get_value("reskin", "panel_opacity", panel_opacity)), 0.0, 1.0)
 	var k := OS.find_keycode_from_string(str(cfg.get_value("reskin", "toggle_key", "F7")))
 	if k != KEY_NONE:
 		toggle_key = k
 	mi1_icons = bool(cfg.get_value("mi1", "icons", mi1_icons))
-	mi1_theme = bool(cfg.get_value("mi1", "theme", mi1_theme))
+	colours = str(cfg.get_value("reskin", "palette", colours))
+	if bool(cfg.get_value("mi1", "theme", false)) and str(mine.get_value("reskin", "palette", "")) == "":
+		colours = "slate"
+	if not PALETTES.has(colours):
+		colours = "mi2"
+	mi1_theme = colours == "slate"
 	keep_teal_headers = bool(cfg.get_value("mi1", "keep_teal_headers", keep_teal_headers))
 	mi1_plain_background = bool(cfg.get_value("mi1", "plain_background", mi1_plain_background))
 	mi1_path = str(cfg.get_value("mi1", "path", mi1_path))
@@ -487,11 +502,10 @@ func _settle_nodes(root: Node, labels: Array) -> int:
 
 
 func _settle_titles(labels: Array) -> void:
-	if enabled and look == "crafted" and title_font and not labels.is_empty():
-		var font := _get_title_font()
-		if font != null:
-			for lb in labels:
-				_title_one(lb, font)
+	if _titles_wanted() and not labels.is_empty():
+		var font := _title_font_or_null()
+		for lb in labels:
+			_title_one(lb, font)
 	_header_memo.clear()
 
 
@@ -682,6 +696,8 @@ func _scan_node(n: Node, trusted := false) -> void:
 	n.set_meta(&"_mi2r", tag)
 	if _polish != null:
 		_polish.scan(n)
+	if _body_active != "" and n is Control:
+		_body_fonts_of(n as Control)
 	if n is Range or n.get_script() != null:
 		_note_track(n)
 	if n is Control:
@@ -893,6 +909,7 @@ const HEADER := "Main/ApplicationViewContainer/GameView/MainContainer/VBoxContai
 const FOOTER_TRACKERS := "Main/ApplicationViewContainer/GameView/MainContainer/VBoxContainer/Footer/HBoxContainer/TrackerView/HBoxContainer"
 const SIDEBAR_GROUPS := "Main/ApplicationViewContainer/GameView/MainContainer/VBoxContainer/MiddleContainer/VBoxContainer/HBoxContainer/MarginContainer/GameSidebarLegacy/MarginContainer/SidebarMainContainer/OptionsMainContainer/ScrollContainer/MarginContainer/OptionsContainer"
 const DOCK_RECT := Rect2(74, 5, 404, 44)
+const DOCK_NAV := "PanelContainer/GridContainer/LeftContainer/MarginContainer/NavigationContainer"
 const SIDEBAR_HEAD := Color("#b89c6a")
 const FOOTER_TIPS := {
 	"HBoxContainer/PanelContainer": "Tracking window: the rates in this bar are averaged over this period.",
@@ -954,8 +971,30 @@ func _place_dock(on: bool) -> void:
 		_dock.mouse_filter = Control.MOUSE_FILTER_IGNORE
 		_dock.add_theme_stylebox_override(&"panel", style_box("well"))
 		header.add_child(_dock)
-	_dock.position = DOCK_RECT.position
-	_dock.size = DOCK_RECT.size
+	if not header.resized.is_connected(_fit_dock_later):
+		header.resized.connect(_fit_dock_later)
+	_fit_dock()
+
+
+func _fit_dock_later() -> void:
+	_fit_dock.call_deferred()
+
+
+func _fit_dock() -> void:
+	if _dock == null or not is_instance_valid(_dock):
+		return
+	var header := _dock.get_parent() as Control
+	var r := DOCK_RECT
+	var nav := header.get_node_or_null(DOCK_NAV) as Control
+	if nav != null:
+		for c in nav.get_children():
+			if c is Control and (c as Control).visible:
+				var left_of_button := (c as Control).global_position.x - header.global_position.x - 8.0
+				r.size.x = minf(r.size.x, left_of_button - r.position.x)
+				break
+	_dock.position = r.position
+	_dock.size = Vector2(maxf(r.size.x, 0.0), r.size.y)
+	_dock.visible = r.size.x >= 160.0
 
 
 func _other_mod_present() -> bool:
@@ -976,7 +1015,7 @@ func _is_other_mod(c: Node) -> bool:
 
 
 func dock_rect() -> Rect2:
-	if _dock == null or not is_instance_valid(_dock) or not enabled:
+	if _dock == null or not is_instance_valid(_dock) or not enabled or not _dock.visible:
 		return Rect2()
 	return Rect2(_dock.global_position, _dock.size).grow(-4)
 
@@ -1021,14 +1060,14 @@ func _style_flat(f: StyleBoxFlat) -> void:
 				&"corner_radius_bottom_left"]:
 			_put(f, p, r)
 	var bg: Color = _orig(f, &"bg_color")
-	if mi1_theme:
-		bg = _mi1_color(bg)
+	if colours != "mi2":
+		bg = _theme_color(bg)
 		if _tracks.has(f) and bg.s < 0.45:
-			bg = Color(MI1_TRACK, bg.a)
+			bg = Color(Color(PALETTES[colours][2]), bg.a)
 	_put(f, &"bg_color", _see_through(bg))
-	if mi1_theme:
+	if colours != "mi2":
 		if f.border_width_left + f.border_width_top + f.border_width_right + f.border_width_bottom > 0:
-			_put(f, &"border_color", _mi1_color(_orig(f, &"border_color")))
+			_put(f, &"border_color", _theme_color(_orig(f, &"border_color")))
 	if look == "crafted":
 		_style_flat_role(f)
 
@@ -1038,11 +1077,12 @@ func _style_texbox(sb: StyleBoxTexture) -> void:
 		return
 	var tex = _orig(sb, &"texture")
 	var sides := ["left", "top", "right", "bottom"]
+	var extra := SOFT_PADDING if look == "crafted" and preset == "soft" and _role_of(sb) in ["card", "frame"] else 0.0
 	for s in sides:
 		var cm: float = _orig(sb, StringName("content_margin_" + s))
 		if cm < 0.0:
 			cm = float(_orig(sb, StringName("texture_margin_" + s)))
-		_put(sb, StringName("content_margin_" + s), cm)
+		_put(sb, StringName("content_margin_" + s), cm + extra)
 	var info := _texture_info(tex, _orig(sb, &"region_rect"))
 	var opaque: Rect2i = info[1]
 	var size: Vector2i = info[2]
@@ -1056,8 +1096,8 @@ func _style_texbox(sb: StyleBoxTexture) -> void:
 	if _rpath(tex).to_lower().contains("/notifications/"):
 		pad = [0, 0, 0, 0]
 	var c: Color = info[0] * _orig(sb, &"modulate_color")
-	if mi1_theme:
-		c = _mi1_color(c)
+	if colours != "mi2":
+		c = _theme_color(c)
 	c = _see_through(c)
 	var tex2: Texture2D
 	var inner := panel_radius + 1
@@ -1084,6 +1124,26 @@ func _see_through(c: Color) -> Color:
 	if panel_opacity < 1.0 and c.s < 0.45 and c.v < 0.45:
 		c.a *= panel_opacity
 	return c
+
+
+const PALETTES := {"mi2": [0.0, 0.0, "#000000", 1.0], "slate": [0.0, 0.0, "#161b23", 1.0],
+	"graphite": [0.08, 0.04, "#0f1011", 0.95], "midnight": [0.63, 0.32, "#0b0d14", 0.9]}
+const ACCENTS := {"sand": ["#5d5850", "#c9b48c"], "gold": ["#7a5f38", "#c9a45c"], "silver": ["#5c6168", "#b8bec6"]}
+
+func _theme_color(c: Color) -> Color:
+	if colours == "mi2":
+		return c
+	if colours == "slate":
+		return _mi1_color(c)
+	var bluish := c.h > 0.40 and c.h < 0.72
+	if keep_teal_headers and bluish and c.s > 0.35:
+		return c
+	if c.s > 0.35 and not (bluish and c.v < 0.6):
+		return c
+	if c.v >= 0.6:
+		return c
+	var p: Array = PALETTES[colours]
+	return Color.from_hsv(p[0], p[1], c.v * float(p[3]), c.a)
 
 
 func _mi1_color(c: Color) -> Color:
@@ -1404,25 +1464,183 @@ func _look(role: String, fill: Color) -> Dictionary:
 	return L
 
 
-func _soften(L: Dictionary, role: String, dark: Color) -> void:
-	L.hi = float(L.hi) * 0.5
-	L.lo = float(L.lo) * 0.5
-	L.grad = float(L.grad) * 0.5
-	if L.rim == dark:
-		L.rim = (L.fill as Color).darkened(0.32)
+const SOFT_PADDING := 2.0
+const SOFT_PLAQUE := Color("#2b2824")
+const SOFT_PLAQUE_TEXT := Color("#e4dccd")
+
+func _soften(L: Dictionary, role: String, _dark: Color) -> void:
+	L.trim = Color(0, 0, 0, 0)
+	L.trim_w = 0
+	L.rivets = false
+	L.caps = false
+	L.accent_rows = 0
+	L.accent_top_rows = 0
+	L.lo = 0.0
+	L.lo_rows = 0
+	L.grad = 0.025
+	if float(L.hi) >= 0.0:
+		L.hi = minf(float(L.hi), 0.04)
+		L.hi_rows = mini(int(L.hi_rows), 1)
+	else:
+		L.hi = float(L.hi) * 0.5
+	var f: Color = L.fill
 	match role:
-		"header", "tab_on":
-			if (L.fill as Color).v < 0.1:
-				L.fill = (L.fill as Color).lerp(Color("#24211d"), 0.8)
-				L.rim = (L.fill as Color).darkened(0.32)
+		"frame", "card", "tooltip", "well":
+			L.r = maxi(panel_radius, 8)
+		"header", "tab_on", "tab":
+			L.r = maxi(mini(panel_radius, 6), 4)
+			f = _mute(f, 0.35).darkened(0.06)
+			if f.v < 0.1:
+				f = f.lerp(_theme_color(Color("#2a2724")), 0.85)
 		"plaque":
-			L.fill = (L.fill as Color).darkened(0.14).lerp(Color(0.5, 0.48, 0.44), 0.12)
-			L.rim = (L.fill as Color).darkened(0.35)
+			L.r = maxi(mini(panel_radius, 6), 4)
+			f = _theme_color(SOFT_PLAQUE)
+			L.hi = 0.0
+		"button", "button_hover":
+			L.r = maxi(mini(panel_radius, 6), 4)
+			if role == "button_hover":
+				f = f.lightened(0.06)
 		"go", "stop":
-			var f: Color = L.fill
-			var g := f.get_luminance()
-			L.fill = f.lerp(Color(g, g, g), 0.3).darkened(0.12)
-			L.rim = (L.fill as Color).darkened(0.32)
+			L.r = maxi(mini(panel_radius, 6), 4)
+			f = _mute(f, 0.45).darkened(0.10)
+		"selected":
+			L.r = maxi(mini(panel_radius, 6), 4)
+			f = f.lightened(0.08)
+		"locked", "slot":
+			L.r = maxi(mini(panel_radius, 4), 3)
+	L.fill = f
+	L.rim = GOLD.darkened(0.2) if role == "selected" else f.darkened(0.18)
+
+
+func _mute(c: Color, amount: float) -> Color:
+	var g := c.get_luminance()
+	return Color(c.lerp(Color(g, g, g), amount), c.a)
+
+
+func _dark_plaques() -> bool:
+	return enabled and look == "crafted" and preset == "soft"
+
+
+var _plaque_memo := {}
+
+func _plaque_text(lb: Label) -> Color:
+	if not _dark_plaques():
+		return Color(0, 0, 0, 0)
+	var start := lb.get_parent()
+	if start == null:
+		return Color(0, 0, 0, 0)
+	var sid := start.get_instance_id()
+	if not _plaque_memo.has(sid):
+		if _plaque_memo.size() > 20000:
+			_plaque_memo.clear()
+		var on_plaque := false
+		var p := start
+		for _i in 4:
+			if p == null or not (p is Control) or p is BaseButton:
+				break
+			var sb = (p as Control).get_theme_stylebox(&"panel") if (p as Control).has_theme_stylebox(&"panel") else null
+			if sb is StyleBoxTexture and (_texboxes.has(sb) or sb.texture is CompressedTexture2D):
+				on_plaque = _role_of(sb) == "plaque"
+				break
+			p = p.get_parent()
+		_plaque_memo[sid] = on_plaque
+	return SOFT_PLAQUE_TEXT if _plaque_memo[sid] else Color(0, 0, 0, 0)
+
+
+const BODY_WEIGHTS := {"Thin": 100, "ExtraLight": 200, "Light": 300, "Regular": 400, "Italic": 400, "Medium": 500,
+	"SemiBold": 600, "Bold": 700, "ExtraBold": 800, "Black": 900}
+var _body_active := ""
+var _body_fonts := {}
+var _body_done := {}
+
+func _apply_body_font(family: String) -> void:
+	for c in _body_done.keys():
+		if is_instance_valid(c):
+			for prop in [&"label_settings", &"theme_override_fonts/font", &"theme_override_fonts/normal_font",
+					&"theme_override_fonts/bold_font"]:
+				if (_saved.get(c, {}) as Dictionary).has(prop):
+					_unput(c, prop)
+	_body_done.clear()
+	_body_fonts.clear()
+	_body_active = family
+	if family != "":
+		var root := get_tree().root
+		for cls in ["Label", "Button", "RichTextLabel", "LineEdit"]:
+			for n in root.find_children("*", cls, true, false):
+				if not _foreign(n):
+					_body_fonts_of(n as Control)
+
+
+func _body_fonts_of(c: Control) -> void:
+	if _body_done.has(c) or c.get_meta(&"mi2r_own", false):
+		return
+	if c is Label:
+		var lb := c as Label
+		var ls: LabelSettings = _orig(lb, &"label_settings")
+		if ls != null:
+			if ls.font != null and not _title_labels.has(lb.get_instance_id()):
+				var nf := _body_for(ls.font)
+				if nf != null:
+					var key := [ls, nf]
+					if not _title_settings.has(key):
+						var copy: LabelSettings = ls.duplicate()
+						copy.font = nf
+						_title_settings[key] = copy
+					_put(lb, &"label_settings", _title_settings[key])
+					_body_done[c] = true
+			return
+	if c is Label or c is Button or c is LineEdit or c is RichTextLabel:
+		var names := [&"normal_font", &"bold_font"] if c is RichTextLabel else [&"font"]
+		for nm in names:
+			var prop := StringName("theme_override_fonts/" + nm)
+			if (_saved.get(c, {}) as Dictionary).has(prop) or not c.has_theme_font(nm):
+				continue
+			var nf := _body_for(c.get_theme_font(nm))
+			if nf != null:
+				_put(c, prop, nf)
+				_body_done[c] = true
+
+
+func _body_for(font: Font) -> Font:
+	if font == null:
+		return null
+	if _body_fonts.has(font):
+		return _body_fonts[font]
+	var base = font
+	while base is FontVariation and (base as FontVariation).base_font != null:
+		base = (base as FontVariation).base_font
+	var out: Font = null
+	var file := (base as Resource).resource_path.get_file() if base is Resource else ""
+	if file.begins_with("Default_"):
+		var weight: int = clampi(BODY_WEIGHTS.get(file.trim_prefix("Default_").get_basename(), 400), 400, 700)
+		var ff := _body_file(weight)
+		if ff != null:
+			if font is FontVariation:
+				var v := (font as FontVariation).duplicate() as FontVariation
+				v.base_font = ff
+				out = v
+			else:
+				out = ff
+	_body_fonts[font] = out
+	return out
+
+
+var _body_files := {}
+
+func _body_file(weight: int) -> FontFile:
+	var key := "%s-%d" % [_body_active, weight]
+	if not _body_files.has(key):
+		var path := FONT_DIR + key + ".ttf"
+		_body_files[key] = _crisp_font(path) if FileAccess.file_exists(path) else null
+	return _body_files[key]
+
+
+func _title_font_or_null() -> Font:
+	return _get_title_font() if title_font else null
+
+
+func _titles_wanted() -> bool:
+	return enabled and look == "crafted" and ((title_font and _get_title_font() != null) or _dark_plaques())
 
 
 func _look_m(L: Dictionary) -> int:
@@ -1538,13 +1756,10 @@ func _style_flat_role(f: StyleBoxFlat) -> void:
 func _check_titles() -> void:
 	if _labels.is_empty():
 		return
-	if not (enabled and look == "crafted" and title_font):
+	if not _titles_wanted():
 		_labels.clear()
 		return
-	var font := _get_title_font()
-	if font == null:
-		_labels.clear()
-		return
+	var font := _title_font_or_null()
 	var batch := _labels.slice(0, 800)
 	_labels = _labels.slice(800)
 	for w in batch:
@@ -1565,13 +1780,17 @@ func _title_one(lb: Label, font: Font) -> void:
 		_label_kind[id] = kind
 	match kind:
 		"title":
-			_label_look(lb, font, Color(0, 0, 0, 0), TITLE_GROW)
+			var col := _plaque_text(lb)
+			if font == null and col.a == 0.0:
+				return
+			_label_look(lb, font, col, TITLE_GROW if font != null else 0)
 			_titles += 1
 			_title_labels[lb.get_instance_id()] = weakref(lb)
 		"caption":
-			var cf := _get_caption_font()
-			if cf != null:
-				_label_look(lb, cf, Color(0, 0, 0, 0), 1)
+			var col := _plaque_text(lb)
+			var cf := _get_caption_font() if title_font else null
+			if cf != null or col.a > 0.0:
+				_label_look(lb, cf, col, 1 if cf != null else 0)
 				_title_labels[lb.get_instance_id()] = weakref(lb)
 
 
@@ -1643,11 +1862,23 @@ func _label_size(lb: Label) -> int:
 	return ls.font_size if ls != null else lb.get_theme_font_size(&"font_size")
 
 
+func _crisp_font(path: String) -> FontFile:
+	var f := FontFile.new()
+	if f.load_dynamic_font(path) != OK:
+		return null
+	f.multichannel_signed_distance_field = true
+	f.msdf_size = 96
+	f.msdf_pixel_range = 12
+	f.generate_mipmaps = true
+	f.subpixel_positioning = TextServer.SUBPIXEL_POSITIONING_AUTO
+	return f
+
+
 func _get_caption_font() -> Font:
 	var path := FONT_DIR + caption_font_file
 	if _caption_font == null and caption_font_file != "" and FileAccess.file_exists(path):
-		var f := FontFile.new()
-		if f.load_dynamic_font(path) == OK:
+		var f := _crisp_font(path)
+		if f != null:
 			var v := FontVariation.new()
 			v.base_font = f
 			v.spacing_glyph = caption_spacing
@@ -1658,8 +1889,8 @@ func _get_caption_font() -> Font:
 func _get_title_font() -> Font:
 	var path := FONT_DIR + title_font_file
 	if _title_font == null and FileAccess.file_exists(path):
-		var f := FontFile.new()
-		if f.load_dynamic_font(path) == OK:
+		var f := _crisp_font(path)
+		if f != null:
 			var v := FontVariation.new()
 			v.base_font = f
 			v.variation_opentype = {TextServerManager.get_primary_interface().name_to_tag("wght"): 700}
@@ -1967,7 +2198,7 @@ func _list_item(n: Node) -> Control:
 		var p := c.get_parent()
 		if p == null:
 			return null
-		if p is GridContainer or p is FlowContainer:
+		if p is GridContainer or p is FlowContainer or (p is BoxContainer and p.name == &"CategoryContainer"):
 			return c as Control
 		c = p
 	return null
@@ -1975,6 +2206,8 @@ func _list_item(n: Node) -> Control:
 
 func _idle_creating(c: Control, on: bool) -> void:
 	var none := c.get_node_or_null("MarginContainer/PanelContainer/NoRecipeContainer") as Control
+	if none == null:
+		none = c.get_node_or_null("MarginContainer/PanelContainer/MarginContainer/NoRecipeContainer") as Control
 	if on and none != null and none.visible:
 		_put(c, &"visible", false)
 	elif _saved.has(c):
@@ -2296,18 +2529,21 @@ func _set_enabled_quiet(on: bool) -> void:
 			var w = n.get_ref()
 			if w != null and is_instance_valid(w):
 				_check_textures(w)
-		if look == "crafted" and title_font and _get_title_font() != null:
+		if _titles_wanted():
+			var tf := _title_font_or_null()
 			for id in _title_labels.keys():
 				var lb = _title_labels[id].get_ref()
 				if lb == null or not is_instance_valid(lb):
 					_title_labels.erase(id)
 				elif lb.is_inside_tree():
-					_title_one(lb, _title_font)
+					_title_one(lb, tf)
 		_labels.clear()
 		_enqueue_labels(get_tree().root)
+		_apply_body_font(body_font if look == "crafted" and body_font != "game" else "")
 		if _polish != null:
 			_polish.apply(true)
 	else:
+		_apply_body_font("")
 		_step("off: frame")
 		_frame(false)
 		_step("off: pages")
@@ -2447,6 +2683,40 @@ func dev_command(line: String) -> void:
 					for prop in parts.slice(2):
 						vals.append("%s=%s" % [prop, str(t.get(prop))])
 					out.append("%s: %s" % [t.name, ", ".join(vals)])
+		"bodyfont":
+			_apply_body_font("" if parts.size() < 2 or parts[1] == "off" else parts[1])
+			out.append("body font: %s, %d controls changed" % [_body_active if _body_active != "" else "game's", _body_done.size()])
+		"fonts":
+			var seen := {}
+			var pt := ThemeDB.get_project_theme()
+			if pt != null and pt.default_font != null:
+				seen[pt.default_font] = 1000000
+			for n in get_tree().root.find_children("*", "Label", true, false):
+				var lb := n as Label
+				if not lb.is_visible_in_tree():
+					continue
+				var f: Font = lb.label_settings.font if lb.label_settings != null and lb.label_settings.font != null else lb.get_theme_font(&"font")
+				seen[f] = int(seen.get(f, 0)) + 1
+			for f in seen:
+				var base = f
+				while base is FontVariation and (base as FontVariation).base_font != null:
+					base = (base as FontVariation).base_font
+				var info := ""
+				if base is FontFile:
+					var ff := base as FontFile
+					info = " aa=%d hint=%d subpx=%d over=%s msdf=%s mip=%s autohint=%s fixed=%d" % [ff.antialiasing, ff.hinting,
+						ff.subpixel_positioning, ff.oversampling, ff.multichannel_signed_distance_field, ff.generate_mipmaps,
+						ff.force_autohinter, ff.fixed_size]
+				out.append("%d x %s %s base=%s %s%s" % [seen[f], f.get_class(), _rpath(f), base.get_class(), _rpath(base) if base != f else "", info])
+			var vp := get_viewport()
+			out.append("viewport: oversampling=%s override=%s snap2d=%s/%s msaa=%d" % [vp.oversampling, vp.oversampling_override,
+				vp.snap_2d_transforms_to_pixel, vp.snap_2d_vertices_to_pixel, vp.msaa_2d])
+		"set":
+			if parts.size() > 3:
+				var nd := get_tree().root.get_node_or_null(NodePath(parts[1]))
+				if nd != null:
+					nd.set(parts[2], str_to_var(" ".join(parts.slice(3))))
+					out.append("%s.%s = %s" % [nd.name, parts[2], str(nd.get(parts[2]))])
 		"kind":
 			if parts.size() > 1:
 				var groups := {}

@@ -8,25 +8,25 @@ Press **F7** in the game at any time to compare with the original look.
 
 ## Before and after
 
-All screenshots are at the game's real size.
+All screenshots are at the game's real size, with the default Soft finish.
 
-**Cards.** The stretched, torn-paper pictures behind cards and headers become clean panels, and titles use a small-caps font.
+**Cards.** The stretched, torn-paper pictures behind cards and headers become clean, rounded panels, and titles use a small-caps font.
 
 ![A Woodcutting card, original and reskinned](docs/images/tree-card.png)
 
-**Headers and progress bars.** Ragged header strips become straight bars. Progress bars get a dark inset track.
+**Panels and labels.** Ragged frames become even panels, and the beige labels turn dark with light text.
 
-![Mining's progress bars, original and reskinned](docs/images/mining-bars.png)
+![Smithing's Selected panel, original and reskinned](docs/images/selected-panel.png)
 
-**Frames.** The jagged teal and green frames become even, with a thin bronze edge.
-
-![The Creating panel, original and reskinned](docs/images/creating-panel.png)
-
-**Tidier pages.** Lists show only the next locked entry instead of every one.
+**Tidier pages.** Lists show only the next locked entry instead of every one, and the idle "Creating" column is hidden.
 
 ![Cooking's recipe list, original and reskinned](docs/images/cooking-tidy.png)
 
-**Sidebar.** Gold headings with a divider, and slim gold level bars.
+**Combat.** Calm, rounded panels and buttons with muted colours.
+
+![Combat panels, original and reskinned](docs/images/combat-panels.png)
+
+**Sidebar.** Headings with a divider, and slim level bars in soft sand instead of blue.
 
 ![The skills sidebar, original and reskinned](docs/images/sidebar.png)
 
@@ -65,26 +65,28 @@ Your reskin settings stay in `%APPDATA%\Games By Malcs\Melvor Idle 2\`, in case 
 ## Using it
 
 - **F7** switches the reskin on and off while you play.
+- It works at every **Window Scale** the game offers (Settings → Display, 70% to 120%).
 - **Settings:** open the game's menu (☰) → **Settings**. Under **Mods**, open the **Reskin** page. Changes apply at once, with no restart. **Reset to defaults** is at the bottom.
 
 ## What it changes
 
 **Panels and frame**
-- The game's stretched, blurry panel pictures become clean, sharp panels, with the same layout and spacing.
-- Each kind of part gets one consistent look:
-  - frames with bronze trim;
-  - cards with a lit top edge;
-  - header bars with a gold underline;
-  - bevelled buttons;
-  - pressed-in selected items;
-  - dimmed locked cards.
+- The game's stretched, blurry panel pictures become clean, sharp panels, with the same layout.
+- The default **Soft** finish aims for Melvor Idle 1's calm look in Melvor Idle 2's colours:
+  - flat panels with rounded corners and no rims or bevels;
+  - muted teal headers and calmer green and red buttons;
+  - the beige labels ("Choose Recipe", "Selected") turn dark with light text;
+  - a little more padding inside cards.
+- The **Crafted** and **Gilded** finishes add bronze trims, bevels, corner studs and gold underlines instead.
+- Every finish gives each kind of part one consistent look, and dims locked cards.
 - Header and page titles use the Alegreya SC font; small captions use Alegreya Sans SC.
+- Other text uses **Rubik**, a softly rounded font made for screens. The Reskin page can switch back to the game's own font.
 - The version text moves out from over the page title to a small plaque under the top bar.
 - The "coming soon" teaser in the top bar is hidden. The footer's groups get hover labels, and the sidebar headings turn gold.
 
 **Pages**
-- Lists show only the **next** locked entry, not every locked one.
-- The crafting pages' "Creating" column only shows while something is being made.
+- Lists show only the **next** locked entry, not every locked one. This includes the category lists on crafting pages, such as Herblore's.
+- The crafting pages' "Creating" column, Herblore's included, only shows while something is being made.
 - Crafting pages and the Shop **reopen the category you used last**, instead of an empty "select a category" view.
 - Quests: the empty dialogue column stays hidden until there is dialogue.
 - The hard black shadows behind rock, tree and monster pictures become faint.
@@ -104,9 +106,12 @@ Your reskin settings stay in `%APPDATA%\Games By Malcs\Melvor Idle 2\`, in case 
 - Numbers keep their width as they count, so they don't jiggle.
 - The pointer is a small sword.
 
-**Optional Melvor Idle 1 extras** (off by default)
+**Colours**
+- Four colour presets for the panels: **MI2** (warm browns, the default), **MI1 Slate** (Melvor Idle 1's slate blues), **Graphite** (neutral greys) and **Midnight** (deep blue-black). Bright colours like buttons and icons stay as they are.
+- An accent colour for bars, dividers, scrollbar grips and selected outlines: the finish's own, **Sand**, **Gold** or **Silver**.
+
+**Optional Melvor Idle 1 icons** (off by default)
 - Melvor Idle 1's skill and item icons, read from your own Melvor Idle 1 install. Nothing is copied or shipped.
-- Melvor Idle 1's slate-grey colours.
 
 ## Settings
 
@@ -117,8 +122,11 @@ All of these are on the in-game **Reskin** page (Settings → Mods → Reskin).
 | **Look** | | |
 | Reskin | On | The whole mod. F7 does the same. |
 | Panel style | Crafted | **Crafted**: trims, bevels and a look per kind of part. **Flat**: plain panels with a thin rim. |
-| Finish | Soft | How much bronze and gold the crafted look uses. **Soft**: calm and low in contrast, for long sessions. **Crafted**: the full look. **Gilded**: extra gold. |
+| Finish | Soft | **Soft**: flat, rounded panels in muted colours, like Melvor Idle 1. **Crafted**: bronze trims, bevels and gold underlines. **Gilded**: Crafted with extra gold. |
 | Title fonts | On | Alegreya fonts for titles and captions. |
+| Body font | Rubik | **Rubik** for all other text, or the **Game's** own font. |
+| Colours | MI2 | Panel colours: **MI2**, **MI1 Slate**, **Graphite** or **Midnight**. |
+| Accent | Finish's | Bars, dividers and outlines in the finish's own colour, **Sand**, **Gold** or **Silver**. |
 | **Frame & Pages** | | |
 | Tidy the frame | On | Hides the teaser, labels the footer, gold sidebar headings. |
 | Tidy the pages | On | Everything under "Pages" above. |
@@ -135,7 +143,6 @@ All of these are on the in-game **Reskin** page (Settings → Mods → Reskin).
 | Mouse pointer | Sword | **Sword** or the **Normal** pointer. |
 | **Melvor Idle 1** | | |
 | Melvor Idle 1 icons | Off | Icons from your own Melvor Idle 1 install. |
-| Melvor Idle 1 colours | Off | Melvor Idle 1's slate greys. |
 
 ### More settings
 
@@ -147,8 +154,8 @@ A few rarer settings are only in the file `mod\mi2_reskin.cfg`, inside the game'
 | `panel_radius` | `6` | Corner rounding, in pixels. |
 | `panel_opacity` | `1.0` | Below 1, panels let the scenery show through. |
 | `title_font_file`, `caption_font_file` | Alegreya | Other fonts from `mod\fonts\`. |
-| `[mi1] keep_teal_headers` | off | With Melvor Idle 1 colours, keeps the game's teal header bars. |
-| `[mi1] plain_background` | off | With Melvor Idle 1 colours, hides the painted scenery. |
+| `[mi1] keep_teal_headers` | off | With the MI1 Slate, Graphite or Midnight colours, keeps the game's teal header bars. |
+| `[mi1] plain_background` | off | With the MI1 Slate colours, hides the painted scenery. |
 | `[mi1] path` | (found by itself) | Where Melvor Idle 1 is installed, if it isn't found in your Steam libraries. |
 
 ## Troubleshooting
@@ -163,7 +170,7 @@ A few rarer settings are only in the file `mod\mi2_reskin.cfg`, inside the game'
 
 ## Licence
 
-The code is under the [MIT licence](LICENSE). The two Alegreya fonts in `mod\fonts\` are under the SIL Open Font License 1.1, with their licences next to them.
+The code is under the [MIT licence](LICENSE). The fonts in `mod\fonts\` (Alegreya SC, Alegreya Sans SC and Rubik) are under the SIL Open Font License 1.1, with their licences next to them.
 
 ## Support
 
