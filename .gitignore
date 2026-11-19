@@ -1,0 +1,7 @@
+screenshots/
+save-backup-*/
+dist/
+tools/pck_index.json
+backup/
+*.log
+mod/mi2_reskin_local.cfg
